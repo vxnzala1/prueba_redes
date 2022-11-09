@@ -266,29 +266,29 @@ int main (){
                                 int find=0;
                                 //Mensaje para solicitar una partida /*HAY QUE TOQUETEAR AQUÍ*/
                                 if(arrayClientes[posicion].estado == 2){ //Si el usuario está logueado
-                                    for(int i=0; i<numClientes; i++){ //tenemos que buscar a alguien que esté en estado 3 y devolver el socket
+                                    for(int j=0; j<numClientes; j++){ //tenemos que buscar a alguien que esté en estado 3 y devolver el socket
                                         //Si hay dos clientes conectados se inicia la partida con el primer jugador que estaba esperando
-                                        if((arrayClientes[i].estado==3) && (asignarJugadoresPartida(arrayClientes,i,posicion,arrayJuegos)==0)){
+                                        if((arrayClientes[j].estado==3) && (asignarJugadoresPartida(arrayClientes,j,posicion,arrayJuegos)==0)){
                                             bzero(buffer,sizeof(buffer));
                                             strcpy(buffer,"+Ok. Empieza la partida.");
                                             inicializarTablero(arrayJuegos[arrayClientes[posicion].id_partida].tablero);
                                             decodificarTablero(arrayJuegos[arrayClientes[posicion].id_partida].tablero,buffer);
                                             send(arrayClientes[posicion].socket,buffer,sizeof(buffer),0);
-                                            send(arrayClientes[i].socket,buffer,sizeof(buffer),0);
+                                            send(arrayClientes[j].socket,buffer,sizeof(buffer),0);
                                             bzero(buffer,sizeof(buffer));
                                             arrayClientes[posicion].estado = 4; //Están jugando
-                                            arrayClientes[i].estado=4;
+                                            arrayClientes[j].estado=4;
                                             strcpy(buffer, "OK.Turno de partida\n");
-                                            send(arrayClientes[i].socket, buffer, sizeof(buffer),0);
+                                            send(arrayClientes[j].socket, buffer, sizeof(buffer),0);
                                             find=1;
-                                       }else if(asignarJugadoresPartida(arrayClientes,i,posicion,arrayJuegos)==1){
+                                        }else if(asignarJugadoresPartida(arrayClientes,j,posicion,arrayJuegos)==1){
                                             bzero(buffer,sizeof(buffer));
                                             strcpy(buffer, "-Err. No hay partidas para asignar, todas las sesiones llenas\n");
                                             send(arrayClientes[posicion].socket, buffer, sizeof(buffer),0);
-                                            send(arrayClientes[i].socket, buffer, sizeof(buffer),0);
+                                            send(arrayClientes[j].socket, buffer, sizeof(buffer),0);
                                             find=0;
                                             arrayClientes[posicion].estado = 3; //Están esperando
-                                            arrayClientes[i].estado=3;
+                                            arrayClientes[j].estado=3;
                                         }
                                     }//foR
                                     if(find==0){
@@ -315,62 +315,67 @@ int main (){
                                     token = strtok(NULL, " ");
                                     j++;
                                 }//while
-                                juego->columna=atoi(array[1]);
-                                int sol=1;
-                                sol=colocarFicha(juego->tablero, juego->columna,  &fila, juego->turno);
-                                if(sol==0){                         
-                                    bzero(buffer, sizeof(buffer));
-                                    char r[MSG_SIZE];
-                                    bzero(r, sizeof(r));
-                                    decodificarTablero(juego->tablero, r);
-                                    strcpy(buffer, "+Ok. Nuevo tablero. ");
-                                    strcat(buffer, r);
-                                    send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer),0);
-                                    send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer),0);
-                                    int ganador=comprobarGanador(juego->tablero);
-                                    if(ganador==1){
-                                        if(juego->turno==1){
-                                            bzero(buffer, sizeof(buffer));
-                                            char *nombre=arrayClientes[juego->posicion2].nombre;
-                                            strcpy(buffer,"+Ok. Jugador ");
-                                            strcat(buffer, nombre);
-                                            strcat(buffer, " ha ganado la partida\n");
-                                            send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer), 0);
-                                            send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer), 0);
+                                //Añadimos le if para comprobar que el cliente desde donde escribimos la ficha es la correcta
+                                if((juego->turno==1 && arrayClientes[juego->posicion1].socket==i)||(juego->turno==2 && arrayClientes[juego->posicion2].socket==i)){
+                                    juego->columna=atoi(array[1]);
+                                    printf("columna[%s]",array[1]); //Controlo con el print que la columna es la correcta
+                                    int sol=1;
+                                    sol=colocarFicha(juego->tablero, juego->columna,  &fila, juego->turno);
+                                    if(sol==0){                         
+                                        bzero(buffer, sizeof(buffer));
+                                        char r[MSG_SIZE];
+                                        bzero(r, sizeof(r)); //Limpiamos el buffer
+                                        decodificarTablero(juego->tablero, r);
+                                        strcpy(buffer, "+Ok. Nuevo tablero. ");
+                                        strcat(buffer, r);
+                                        send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer),0);
+                                        send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer),0);
+                                        int ganador=comprobarGanador(juego->tablero);
+                                        if(ganador==1){
+                                            if(juego->turno==1){
+                                                bzero(buffer, sizeof(buffer));
+                                                char *nombre=arrayClientes[juego->posicion2].nombre;
+                                                strcpy(buffer,"+Ok. Jugador ");
+                                                strcat(buffer, nombre);
+                                                strcat(buffer, " ha ganado la partida\n");
+                                                send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer), 0);
+                                                send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer), 0);
+                                                juego->turno=2;
+                                            }else if(juego->turno==2){
+                                                bzero(buffer, sizeof(buffer));
+                                                char *nombre=arrayClientes[juego->posicion1].nombre;
+                                                strcpy(buffer,"+Ok. Jugador ");
+                                                strcat(buffer, nombre);
+                                                strcat(buffer, " ha ganado la partida\n");
+                                                send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer), 0);
+                                                send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer), 0);
+                                                juego->turno=1;
+                                            }
+                                        }else if(ganador==0){
+                                            if(juego->turno==1){
+                                                juego->turno=2;
+                                                bzero(buffer,sizeof(buffer));
+                                                strcpy(buffer,"+Ok. Turno de partida\n");
+                                                send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer),0);
+                                            }else if(juego->turno==2){                                  
+                                                juego->turno=1;
+                                                bzero(buffer,sizeof(buffer));
+                                                strcpy(buffer,"+Ok. Turno de partida\n");
+                                                send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer),0);
+                                            }
                                         }
-                                        else if(juego->turno==2){
-                                            bzero(buffer, sizeof(buffer));
-                                            char *nombre=arrayClientes[juego->posicion1].nombre;
-                                            strcpy(buffer,"+Ok. Jugador ");
-                                            strcat(buffer, nombre);
-                                            strcat(buffer, " ha ganado la partida\n");
-                                            send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer), 0);
-                                            send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer), 0);
-                                        }
-                                    }else if(ganador==0){
-                                        if(juego->turno==1){
-                                            juego->turno=2;
-                                            bzero(buffer,sizeof(buffer));
-                                            strcpy(buffer,"+Ok. Turno de partida\n");
-                                            send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer),0);
-                                        }else if(juego->turno==2){                                  
-                                            juego->turno=1;
-                                            bzero(buffer,sizeof(buffer));
-                                            strcpy(buffer,"+Ok. Turno de partida\n");
-                                            send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer),0);
-                                        }
-                                    }
 
-                                }else if(sol==-1){
-                                    if(juego->turno==1){
-                                    bzero(buffer,sizeof(buffer));
-                                    strcpy(buffer,"-Err. Casilla no valida\n");
-                                    send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer),0);
-                                }
-                                    else if(juego->turno==2){                                   
+                                    }else if(sol==-1){
+                                        if(juego->turno==1){
                                         bzero(buffer,sizeof(buffer));
                                         strcpy(buffer,"-Err. Casilla no valida\n");
-                                        send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer),0);
+                                        send(arrayClientes[juego->posicion2].socket, buffer, sizeof(buffer),0);
+                                    }
+                                        else if(juego->turno==2){                                   
+                                            bzero(buffer,sizeof(buffer));
+                                            strcpy(buffer,"-Err. Casilla no valida\n");
+                                            send(arrayClientes[juego->posicion1].socket, buffer, sizeof(buffer),0);
+                                    }
                                 }
                             }
                             }else if(strcmp(buffer,"SALIR\n") == 0){//Miramos si el cliente quiere salir
