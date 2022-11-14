@@ -2,13 +2,31 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "Funciones.h"
 
-void salirCliente(int socket, fd_set * readfds, int * numClientes, Jugador arrayClientes[]){
+void salirCliente(int socket, fd_set * readfds, int * numClientes, Jugador arrayClientes[],Juego arrayJuegos[]){
 	//Sobreescribimos el socket del cliente que se ha desconectado con el último socket del array
 	int i;
 	for(i=0; i<(*numClientes); i++){
 		if(arrayClientes[i].socket==socket){
+            if(arrayClientes[i].estado==4){
+              Juego *juego=&(arrayJuegos[arrayClientes[i].id_partida]);
+              int jugador2 = -1;
+                if(juego->posicion1==arrayClientes[i].socket){
+                    jugador2=juego->posicion2;
+                }
+                else{
+                    jugador2=juego->posicion1;
+                }
+            arrayClientes[jugador2].estado=2;
+            char buffer[250];
+             bzero(buffer,sizeof(buffer));
+            strcpy(buffer, "-Err, el contrincante se ha ido\n");
+            send(arrayClientes[jugador2].socket, buffer, sizeof(buffer),0);
+            juego->turno=0;
+            }
 			arrayClientes[i]=arrayClientes[(*numClientes)-1];
 			break;
 		}
@@ -92,7 +110,7 @@ void inicializarStruct(Jugador* jugador,int new_sd){
 	jugador->socket = new_sd;
 	jugador->nombre = NULL;
 	jugador->password = NULL;
-	jugador->estado = 2;
+	jugador->estado = 2; //Cambiamos el estado de los clientes a 2 para poder iniciar partida del tirón y ahorrar tiempo
     jugador->id_partida=-1;
 }
 

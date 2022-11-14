@@ -187,6 +187,9 @@ int comprobarGanador(char tablero[6][7]){
 
 //Funcion que pone "o" en el turno del jugador 1 y "x" en el turno del jugador 2
 int colocarFicha(char tablero[6][7], int columna, int *fila, int turno){
+    if((columna-1)>6 || (columna-1) <0){ //Si es mas grande que 6 o menor que 0, la columna no existe
+        return -2;
+    }
     if(turno==1){
 		for(int i=6;i>=0;i--){
 	        if(tablero[i][columna-1]=='-'){

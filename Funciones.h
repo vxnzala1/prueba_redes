@@ -13,7 +13,7 @@
 int buscarUsuario(int socket,Jugador arrayClientes[],int numUsuarios);
 void inicializarStruct(Jugador* jugador,int new_sd);
 int existeUsuario(char *user);
-void salirCliente(int socket, fd_set * readfds, int * numClientes, Jugador arrayClientes[]);
+void salirCliente(int socket, fd_set * readfds, int * numClientes, Jugador arrayClientes[],Juego arrayJuegos[]);
 int comprobarPass(char* password); //Falta por implementar
 void registroUsuario(char *user, char *password);
 int asignarJugadoresPartida(Jugador arrayClientes[], int i, int posicion, Juego arrayJuegos[10]);
